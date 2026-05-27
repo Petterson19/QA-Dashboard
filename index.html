@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QA Dashboard - Mapeamento de Guidelines</title>
+    <title>QA Dashboard - Master Guidelines Integration</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -13,7 +13,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 1000px;
+            max-width: 1100px;
             background: #fff;
             padding: 30px;
             border-radius: 12px;
@@ -77,11 +77,13 @@
             border-left: 4px solid #e74c3c;
             border-radius: 6px;
             margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
         }
         .checkbox-item {
             display: flex;
             align-items: center;
-            margin-bottom: 8px;
         }
         .checkbox-item input {
             margin-right: 10px;
@@ -146,12 +148,12 @@
 <body>
 
 <div class="container">
-    <h2>Sistema de Gestão e Fluxo de QA (Com Busca de Guidelines)</h2>
+    <h2>Painel de QA - Integração Master de Diretrizes</h2>
     
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('cadastro')">1. Registrar Nova Tarefa</button>
         <button class="tab-btn" onclick="switchTab('relatorios')">2. Relatórios por Anotador</button>
-        <button class="tab-btn" onclick="switchTab('historico')">3. Histórico do Banco (${getTaskCount()})</button>
+        <button class="tab-btn" onclick="switchTab('historico')">3. Histórico Geral (${getTaskCount()})</button>
     </div>
 
     <!-- ABA 1: CADASTRO -->
@@ -175,20 +177,20 @@
             <div>
                 <div class="form-group">
                     <label>* Task ID</label>
-                    <input type="text" id="taskId" placeholder="Ex: TSK-99281">
+                    <input type="text" id="taskId" placeholder="Ex: TSK-88312">
                 </div>
                 <div class="form-group">
-                    <label>Total de Itens/Segmentos Analisados nesta Task</label>
+                    <label>Total de Segmentos Analisados nesta Task</label>
                     <input type="number" id="totalItems" value="10" min="1">
                 </div>
                 <div class="form-group">
-                    <label>Quantidade de Itens com Erro nesta Task</label>
+                    <label>Quantidade de Segmentos com Erro nesta Task</label>
                     <input type="number" id="errorItems" value="0" min="0">
                 </div>
             </div>
         </div>
 
-        <h3>Infrações Identificadas nesta Tarefa (Conforme image_66ead5.png)</h3>
+        <h3>Infrações Identificadas (Mapeamento Rápido Checklist)</h3>
         <div class="checkbox-group">
             <div class="checkbox-item">
                 <input type="checkbox" class="error-check" value="Pontuação (Fluxo vs Finalidade)">
@@ -214,9 +216,11 @@
 
         <div class="custom-error-box">
             <div class="form-group">
-                <label>Campo Extra: Outro Erro Encontrado (Mapeamento Automatizado)</label>
-                <textarea id="customErrorText" rows="2" placeholder="Descreva o erro aqui por extenso (Ex: O anotador escreveu FBI sem espaço ou colocou a tag narrativa dentro das aspas...)"></textarea>
-                <p style="font-size: 12px; color: #555; margin-top: 5px;">* O sistema analisará o texto acima para encaixá-lo dinamicamente na diretriz correta do documento <strong>PT-BR Special Notes.pdf</strong>.</p>
+                <label>Campo Extra: Descreva o Erro Encontrado ("Outro")</label>
+                <textarea id="customErrorText" rows="3" placeholder="Escreva aqui por extenso o desvio encontrado. Ex: O anotador não descartou um segmento com fala sobreposta... ou deixou o símbolo '%' no texto... ou errou o espaço do En Dash..."></textarea>
+                <p style="font-size: 12px; color: #2c3e50; margin-top: 5px;">
+                    💡 <strong>Mecanismo Inteligente:</strong> O sistema analisará o texto e buscará correspondência direta nas guidelines gerais (Disfluências, Normalização, Descarte/Sobreposição ou Alinhamento de Pronúncia).
+                </p>
             </div>
         </div>
 
@@ -227,7 +231,7 @@
     <div id="relatorios" class="tab-content">
         <h3>Gerar Relatório Consolidado por Anotador</h3>
         <div class="form-group">
-            <label>Selecione o Anotador no Banco:</label>
+            <label>Selecione o Anotador para Unificar os Dados:</label>
             <select id="selectLabeller" onchange="generateReport()"></select>
         </div>
 
@@ -238,20 +242,20 @@
                 </div>
                 <div>
                     <div class="form-group">
-                        <label>Métrica de Categoria Selecionada (QA Score)</label>
+                        <label>Métrica de Categoria Acumulada (QA Score)</label>
                         <input type="text" id="scoreCategoryField" readonly style="font-weight: bold; background: #f8fafc;">
                     </div>
                 </div>
             </div>
 
             <div class="form-group">
-                <label>Resumo de Métricas Acumuladas:</label>
+                <label>Métricas Consolidadas:</label>
                 <p id="metricsSummaryText" style="font-size: 14px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1;"></p>
             </div>
 
             <div class="form-group">
-                <label>Feedback Consolidado Pronto para Cópia (Comments):</label>
-                <textarea id="consolidatedComments" rows="14"></textarea>
+                <label>Feedback Unificado Pronto para Envio (Comments):</label>
+                <textarea id="consolidatedComments" rows="15"></textarea>
             </div>
         </div>
     </div>
@@ -259,7 +263,7 @@
     <!-- ABA 3: HISTÓRICO -->
     <div id="historico" class="tab-content">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3>Todas as Tarefas Registradas</h3>
+            <h3>Histórico de Segmentos Auditados</h3>
             <button class="btn btn-danger" onclick="clearDatabase()">Limpar Todo o Banco de Dados</button>
         </div>
         <table id="historyTable">
@@ -268,10 +272,10 @@
                     <th>Data QA</th>
                     <th>Anotador</th>
                     <th>Task ID</th>
-                    <th>Itens Totais</th>
+                    <th>Segmentos</th>
                     <th>Erros</th>
                     <th>Precisão</th>
-                    <th>Erros / Descrições Mapeadas</th>
+                    <th>Guidelines Violadas / Detalhes</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -282,7 +286,7 @@
 <script>
     document.getElementById('qaDate').valueAsDate = new Date();
 
-    // Motor de Busca e Classificação das Guidelines (PT-BR Special Notes.pdf)
+    // Motor de busca e classificação cruzada baseado em "PT-BR Special Notes" e "CC_Multi Freetalk General Guidelines"
     function classifyErrorText(text) {
         if (!text || text.trim() === "") return null;
         
@@ -290,28 +294,48 @@
         
         const rules = [
             {
+                category: "Qualidade do Áudio e Regras de Descarte (Discard)",
+                keywords: ["descarte", "discard", "sobrepos", "overlap", "inaudivel", "inaudível", "ruido", "ruído", "static", "distortion", "distorção", "fala cruzada"],
+                ruleContext: "Diretrizes Gerais: Qualquer fala sobreposta (mesmo com filler words) ou áudio com ruído severo/estática alta deve ser descartado, adicionando o motivo nos comentários."
+            },
+            {
+                category: "Disfluência e Sinais Especiais (En/Em Dash, Ellipsis)",
+                keywords: ["en dash", "em dash", "traço", "hífen", "hifen", "ellipsis", "reticência", "reticencia", "gagueira", "stutter", "autocorreção", "self-correction", "espaço antes"],
+                ruleContext: "Diretrizes Gerais - Seção 3: En Dash (-) exige espaço antes/depois para correções internas de palavras. Em Dash (—) exige espaço para correções de frases. Ellipsis (...) em caractere único para hesitações estruturadas."
+            },
+            {
+                category: "Normalização (Números, Símbolos e Unidades)",
+                keywords: ["número", "numero", "porcentagem", "percent", "símbolo", "simbolo", "abrev", "expand", "st.", "mt.", "url", "email", "arroba", "dot", "barra", "%", "/"],
+                ruleContext: "Diretrizes Gerais - Seção 4: Símbolos falados devem ser totalmente normalizados por extenso (ex: 50% -> 'fifty percent'). É proibido deixar caracteres como '%' ou '/' no texto final."
+            },
+            {
+                category: "Alinhamento de Pronúncia e Loanwords",
+                keywords: ["loanword", "estrangeir", "guasap", "yutub", "whatsapp", "starbucks", "brand", "marca", "pronúncia", "pronuncia", "accidental", "mispronunciation"],
+                ruleContext: "Diretrizes Gerais - Seção 1: Transcreva na forma normalizada local se for loanword comum (WiFi, iPhone). Se for marca/nome estrangeiro mal pronunciado de forma sistemática, use a grafia padrão oficial (ex: WhatsApp)."
+            },
+            {
                 category: "Pontuação (Fluxo vs Finalidade)",
-                keywords: ["vírgula", "ponto", "pausa", "colon", "dois pontos", "traço", "dash", "comma", "period", "200ms", "audio", "estrut", "pontua"]
+                keywords: ["vírgula", "ponto", "pausa", "colon", "dois pontos", "comma", "period", "200ms", "estrut", "pontua"],
+                ruleContext: "PT-BR Special Notes & General Rules: Use vírgulas para a regra do fluxo (pensamentos contínuos) e pontos finais para a regra da finalidade. Pausas de respiro ≥ 200 ms exigem pontuação."
             },
             {
                 category: "Formatação de Diálogos",
-                keywords: ["diálogo", "dialogo", "aspas", "quotes", "disse", "said", "tag", "narrat", "thomas", "joshua"]
+                keywords: ["diálogo", "dialogo", "aspas", "quotes", "disse", "said", "tag", "narrat", "thomas", "joshua"],
+                ruleContext: "PT-BR Special Notes - Seção 2: As tags narrativas (como 'disse Joshua' ou 'uttered by') devem obrigatoriamente permanecer do lado de fora das aspas do discurso direto."
             },
             {
-                category: "Capitalização (Principal Word Rule)",
-                keywords: ["maiuscula", "maiúscula", "capital", "titulo", "título", "title", "principal word", "nome", "formal", "daughter", "moon"]
+                category: "Capitalização e Ortografia",
+                keywords: ["maiuscula", "maiúscula", "capital", "titulo", "título", "title", "principal word", "nome", "formal", "acent", "diacrit"],
+                ruleContext: "PT-BR Notes & General Rules: Siga a 'Principal Word Rule' para títulos (capitalizar substantivos, verbos, adjetivos). Garanta a acentuação ortográfica correta (á, é, ñ, ç)."
             },
             {
                 category: "Interjeições e Rótulos",
-                keywords: ["interjei", "laughs", "coughs", "risad", "tosse", "haha", "uh", "um", "label", "lexic", "toss", "rir", "ah", "oh", "hmm"]
-            },
-            {
-                category: "Acrônimos e Inicialismos",
-                keywords: ["sigla", "acronim", "acrónim", "inicialis", "espaço", "letra", "nasa", "bbc", "fbi", "mi five", "numero", "número", "spelt", "capitalis", "unicef", "nato", "cnn"]
+                keywords: ["interjei", "laughs", "coughs", "risad", "tosse", "haha", "uh", "um", "label", "lexic", "toss", "rir", "ah", "oh", "hmm"],
+                ruleContext: "Seção 5 / PT-BR Checklist: Transcreva apenas formas lexicalizadas. É estritamente proibido criar marcadores como [laughs] ou [coughs] a menos que haja permissão explícita."
             }
         ];
 
-        let bestMatch = "Outros Desvios Customizados";
+        let bestMatch = null;
         let maxCount = 0;
 
         rules.forEach(rule => {
@@ -321,11 +345,15 @@
             });
             if (count > maxCount) {
                 maxCount = count;
-                bestMatch = rule.category;
+                bestMatch = rule;
             }
         });
 
-        return { category: bestMatch, details: text.trim() };
+        if (bestMatch) {
+            return { category: bestMatch.category, details: text.trim(), context: bestMatch.ruleContext };
+        } else {
+            return { category: "Outros Desvios Analisados", details: text.trim(), context: "Análise customizada inserida pelo QA." };
+        }
     }
 
     function switchTab(tabId) {
@@ -341,15 +369,15 @@
     }
 
     function updateTabLabels() {
-        document.querySelectorAll('.tabs button')[2].innerText = `3. Histórico do Banco (${getTaskCount()})`;
+        document.querySelectorAll('.tabs button')[2].innerText = `3. Histórico Geral (${getTaskCount()})`;
     }
 
     function getTaskCount() {
-        const data = localStorage.getItem('qa_tasks_db');
+        const data = localStorage.getItem('qa_tasks_master_db');
         return data ? JSON.parse(data).length : 0;
     }
 
-    // Salvar tarefa no Banco do Navegador (LocalStorage)
+    // Salvar no Banco Local
     function saveTask() {
         const labeller = document.getElementById('labeller').value.trim();
         const taskId = document.getElementById('taskId').value.trim();
@@ -360,38 +388,44 @@
         const customText = document.getElementById('customErrorText').value;
 
         if (!labeller || !taskId || isNaN(totalItems) || isNaN(errorItems)) {
-            alert("Por favor, preencha todos os campos obrigatórios.");
+            alert("Por favor, preencha todos os campos obrigatórios (*).");
             return;
         }
         if (errorItems > totalItems) {
-            alert("O número de erros não pode ser maior que o total de itens.");
+            alert("A quantidade de erros não pode superar os segmentos totais.");
             return;
         }
 
-        // 1. Processar caixas de seleção manuais
         let errorsCommitted = [];
+
+        // 1. Coleta do Checklist Fixo
         document.querySelectorAll('.error-check:checked').forEach(cb => {
-            errorsCommitted.push({ category: cb.value, details: "Identificado via checklist manual." });
+            let context = "Verificar seção correspondente nas diretrizes.";
+            if (cb.value.includes("Pontuação")) context = "Regra do Fluxo vs Finalidade baseada em pausas e conexões lógicas.";
+            if (cb.value.includes("Diálogos")) context = "Tags de fala externa devem ficar fora das aspas.";
+            if (cb.value.includes("Capitalização")) context = "Principal Word Rule em títulos formais.";
+            if (cb.value.includes("Interjeições")) context = "Transcrever formas lexicalizadas. Proibido rótulos como [laughs].";
+            if (cb.value.includes("Siglas")) context = "Acrônimos juntos (NASA); inicialismos separados por espaço (B B C).";
+            
+            errorsCommitted.push({ category: cb.value, details: "Identificado no checklist padrão.", context: context });
         });
 
-        // 2. Processar o campo extra "Outro" com busca automática
-        const processedCustomError = classifyErrorText(customText);
-        if (processedCustomError) {
-            errorsCommitted.push(processedCustomError);
-            alert(`Mapeamento Concluído!\nO erro digitado foi categorizado automaticamente como:\n"${processedCustomError.category}"`);
+        // 2. Coleta e Classificação Inteligente do campo "Outro"
+        const classified = classifyErrorText(customText);
+        if (classified) {
+            errorsCommitted.push(classified);
+            alert(`Guideline Mapeada com Sucesso!\nSua descrição foi associada a:\n"${classified.category}"`);
         }
 
-        const newTask = {
-            qaName, qaDate, labeller, taskId, totalItems, errorItems, errorsCommitted
-        };
+        const newTask = { qaName, qaDate, labeller, taskId, totalItems, errorItems, errorsCommitted };
 
-        let db = localStorage.getItem('qa_tasks_db') ? JSON.parse(localStorage.getItem('qa_tasks_db')) : [];
+        let db = localStorage.getItem('qa_tasks_master_db') ? JSON.parse(localStorage.getItem('qa_tasks_master_db')) : [];
         db.push(newTask);
-        localStorage.setItem('qa_tasks_db', JSON.stringify(db));
+        localStorage.setItem('qa_tasks_master_db', JSON.stringify(db));
 
-        alert(`Tarefa ${taskId} de ${labeller} integrada ao banco com sucesso!`);
+        alert(`Task ${taskId} de ${labeller} processada!`);
         
-        // Limpar os campos para a próxima avaliação
+        // Reset de campos
         document.getElementById('taskId').value = '';
         document.getElementById('errorItems').value = '0';
         document.getElementById('customErrorText').value = '';
@@ -401,12 +435,11 @@
 
     function populateLabellerDropdown() {
         const select = document.getElementById('selectLabeller');
-        select.innerHTML = '<option value="">-- Selecione um Anotador --</option>';
+        select.innerHTML = '<option value="">-- Selecione o Anotador --</option>';
         
-        let db = localStorage.getItem('qa_tasks_db') ? JSON.parse(localStorage.getItem('qa_tasks_db')) : [];
-        if(db.length === 0) return;
-
-        let labellers = [...new Set(db.map(task => task.labeller))];
+        let db = localStorage.getItem('qa_tasks_master_db') ? JSON.parse(localStorage.getItem('qa_tasks_master_db')) : [];
+        let labellers = [...new Set(db.map(t => t.labeller))];
+        
         labellers.forEach(name => {
             let opt = document.createElement('option');
             opt.value = name;
@@ -415,7 +448,7 @@
         });
     }
 
-    // Gerar Relatório Acumulado Completo
+    // Geração do Relatório Agregado Avançado
     function generateReport() {
         const targetLabeller = document.getElementById('selectLabeller').value;
         if (!targetLabeller) {
@@ -423,26 +456,30 @@
             return;
         }
 
-        let db = localStorage.getItem('qa_tasks_db') ? JSON.parse(localStorage.getItem('qa_tasks_db')) : [];
-        let filteredTasks = db.filter(task => task.labeller === targetLabeller);
+        let db = localStorage.getItem('qa_tasks_master_db') ? JSON.parse(localStorage.getItem('qa_tasks_master_db')) : [];
+        let filtered = db.filter(t => t.labeller === targetLabeller);
 
-        let totalAccumulated = 0;
-        let errorsAccumulated = 0;
-        let categoriesMap = {};
-        let specificNotesList = [];
+        let totalSegments = 0;
+        let totalErrors = 0;
+        let summaryCategories = {};
+        let specificObservations = [];
 
-        filteredTasks.forEach(task => {
-            totalAccumulated += task.totalItems;
-            errorsAccumulated += task.errorItems;
+        filtered.forEach(task => {
+            totalSegments += task.totalItems;
+            totalErrors += task.errorItems;
             task.errorsCommitted.forEach(err => {
-                categoriesMap[err.category] = (categoriesMap[err.category] || 0) + 1;
-                if(err.details && !err.details.includes("checklist manual")) {
-                    specificNotesList.push(`[${err.category}]: "${err.details}"`);
+                if (!summaryCategories[err.category]) {
+                    summaryCategories[err.category] = { count: 0, context: err.context };
+                }
+                summaryCategories[err.category].count += 1;
+                
+                if (err.details && !err.details.includes("Identificado no checklist")) {
+                    specificObservations.push(`Task ${task.taskId}: "${err.details}" (${err.category})`);
                 }
             });
         });
 
-        const accuracy = totalAccumulated > 0 ? ((totalAccumulated - errorsAccumulated) / totalAccumulated) * 100 : 0;
+        const accuracy = totalSegments > 0 ? ((totalSegments - totalErrors) / totalSegments) * 100 : 0;
         
         let scoreCategory = "";
         let color = "";
@@ -453,42 +490,38 @@
         else { scoreCategory = "< 60%"; color = "#e74c3c"; }
 
         const accBox = document.getElementById('accuracyBox');
-        accBox.innerText = `Precisão Geral: ${accuracy.toFixed(2)}%`;
+        accBox.innerText = `Acurácia Global Acumulada: ${accuracy.toFixed(2)}%`;
         accBox.style.color = 'white';
         accBox.style.backgroundColor = color;
 
         document.getElementById('scoreCategoryField').value = scoreCategory;
-        document.getElementById('metricsSummaryText').innerText = `Total de Tarefas Avaliadas: ${filteredTasks.length} | Segmentos Analisados: ${totalAccumulated} | Total de Erros Mapeados: ${errorsAccumulated}`;
+        document.getElementById('metricsSummaryText').innerText = `Volume Controlado: ${filtered.length} Tasks | Total de Segmentos: ${totalSegments} | Segmentos com Desvio: ${totalErrors}`;
 
-        // Construção do Feedback Dinâmico Inteligente
+        // Construção do e-mail/comentário final unificado
         let comments = `Prezado(a) ${targetLabeller},\n\n`;
-        comments += `Realizamos a consolidação das suas últimas ${filteredTasks.length} tarefas sob os critérios das nossas Diretrizes. Sua acurácia acumulada foi de ${accuracy.toFixed(2)}% (Métrica de Score: ${scoreCategory}).\n\n`;
+        comments += `Abaixo apresentamos a consolidação de desempenho obtida através da auditoria de QA efetuada nas suas últimas ${filtered.length} tarefas de transcrição.\n\n`;
+        comments += `• Métrica de Performance Acumulada: ${accuracy.toFixed(2)}%\n`;
+        comments += `• Categoria de Entrega (QA Score): ${scoreCategory}\n\n`;
 
-        if (errorsAccumulated === 0) {
-            comments += `Parabéns! Sua performance foi impecável ao longo destas entregas, demonstrando total aderência e atenção às diretrizes e tratamento de áudio. Continue mantendo esse alto padrão de qualidade!`;
+        if (totalErrors === 0) {
+            comments += `Excelente constância de entrega! Sua performance atingiu aderência total com os manuais de Processamento de Dados (CC_Multi Freetalk) e Notas Especiais. Continue com esse rigor técnico.`;
         } else {
-            comments += `Identificamos recorrência de desvios nas seguintes diretrizes do documento 'PT-BR Special Notes':\n`;
+            comments += `Para garantir a calibração das próximas entregas, analise os desvios recorrentes com base no cruzamento das diretrizes globais e locais:\n\n`;
             
-            for (let cat in categoriesMap) {
-                let contextRule = "";
-                if (cat.includes("Pontuação")) contextRule = "Regra de Fluxo (vírgula para pensamentos contínuos) vs Regra de Finalidade (ponto final para pensamentos concluídos).";
-                else if (cat.includes("Diálogos")) contextRule = "Regra de Tags: as descrições narrativas (ex: disse Fulano) devem permanecer fora das aspas.";
-                else if (cat.includes("Capitalização")) contextRule = "Principal Word Rule: certifique-se de capitalizar substantivos, verbos e adjetivos em títulos formais.";
-                else if (cat.includes("Interjeições")) contextRule = "Apenas formas estritamente lexicalizadas são permitidas. Não use rótulos descritivos como [laughs].";
-                else if (cat.includes("Acrônimos")) contextRule = "Acrônimos pronunciados como palavra ficam juntos (NASA); inicialismos soletrados exigem espaço entre cada letra (F B I).";
-                else contextRule = "Desvios customizados identificados fora do padrão comum das caixas.";
-
-                comments += `- ${cat} (Detectado ${categoriesMap[cat]} vez(es)): ${contextRule}\n`;
+            for (let cat in summaryCategories) {
+                comments += `⚠️ [${cat}] (Registrado em ${summaryCategories[cat].count} momento(s)):\n`;
+                comments += `   Diretriz violada: ${summaryCategories[cat].context}\n\n`;
             }
 
-            if (specificNotesList.length > 0) {
-                comments += `\nObservações específicas encontradas nas avaliações:\n`;
-                specificNotesList.forEach(note => {
-                    comments += `  • ${note}\n`;
+            if (specificObservations.length > 0) {
+                comments += `Apontamentos específicos extraídos das suas tasks:\n`;
+                specificObservations.forEach(obs => {
+                    comments += `  - ${obs}\n`;
                 });
+                comments += `\n`;
             }
-            
-            comments += `\nSolicitamos que faça uma revisão atenta destes tópicos no guia do projeto antes de prosseguir com as próximas tarefas. Estamos à disposição para tirar dúvidas.`;
+
+            comments += `Recomendamos uma leitura atenta às seções de Normalização de Símbolos, Disfluências e Descarte de Áudio nas Diretrizes Gerais antes de iniciar o seu próximo lote. Estamos à disposição para apoiar em eventuais dúvidas!`;
         }
 
         document.getElementById('consolidatedComments').value = comments;
@@ -499,9 +532,9 @@
         const tbody = document.querySelector('#historyTable tbody');
         tbody.innerHTML = '';
         
-        let db = localStorage.getItem('qa_tasks_db') ? JSON.parse(localStorage.getItem('qa_tasks_db')) : [];
+        let db = localStorage.getItem('qa_tasks_master_db') ? JSON.parse(localStorage.getItem('qa_tasks_master_db')) : [];
         if(db.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhuma tarefa gravada no banco de dados local ainda.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhuma tarefa gravada no histórico até o momento.</td></tr>';
             return;
         }
 
@@ -510,7 +543,7 @@
             let accuracy = task.totalItems > 0 ? ((task.totalItems - task.errorItems) / task.totalItems) * 100 : 0;
             
             let errDescriptions = task.errorsCommitted.map(e => {
-                return e.details && !e.details.includes("checklist manual") ? `<strong>${e.category}</strong> (${e.details})` : e.category;
+                return e.details && !e.details.includes("checklist manual") ? `<strong>${e.category}</strong>: <em>"${e.details}"</em>` : `<strong>${e.category}</strong>`;
             }).join('<br> ');
 
             tr.innerHTML = `
@@ -520,19 +553,19 @@
                 <td>${task.totalItems}</td>
                 <td>${task.errorItems}</td>
                 <td style="font-weight:bold; color: ${accuracy >= 90 ? 'green' : 'orange'}">${accuracy.toFixed(1)}%</td>
-                <td>${errDescriptions || 'Nenhum erro'}</td>
+                <td>${errDescriptions || '<span style="color:green">Sem desvios</span>'}</td>
             `;
             tbody.appendChild(tr);
         });
     }
 
     function clearDatabase() {
-        if(confirm("Tem certeza de que deseja apagar TODO o histórico? Esta ação é irreversível.")) {
-            localStorage.removeItem('qa_tasks_db');
+        if(confirm("Deseja expurgar todo o histórico de auditoria local? Dados não salvos externamente serão perdidos permanentemente.")) {
+            localStorage.removeItem('qa_tasks_master_db');
             renderHistoryTable();
             updateTabLabels();
             document.getElementById('reportResult').style.display = 'none';
-            alert("Banco de dados reiniciado.");
+            alert("Banco de dados resetado com sucesso.");
         }
     }
 </script>
