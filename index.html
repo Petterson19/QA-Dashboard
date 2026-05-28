@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QA Dashboard - Master Guidelines Integration</title>
+    <title>QA Dashboard - Master Guidelines & Time Tracking</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -25,6 +25,32 @@
             border-bottom: 2px solid #3498db;
             padding-bottom: 8px;
         }
+        
+        /* NOVO: Container de Estatísticas Globais */
+        .stats-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            background: #e6f7ff;
+            border: 1px solid #91d5ff;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .stat-card {
+            flex: 1;
+            font-size: 14px;
+        }
+        .stat-card strong {
+            color: #2c3e50;
+        }
+        .stat-card span {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1890ff;
+            display: block;
+            margin-top: 4px;
+        }
+
         .tabs {
             display: flex;
             gap: 10px;
@@ -150,13 +176,23 @@
 <div class="container">
     <h2>Painel de QA - Integração Master de Diretrizes</h2>
     
+    <div class="stats-container">
+        <div class="stat-card">
+            <strong>Volume de Tasks Mapeadas</strong>
+            <span id="statTotalTasks">0</span>
+        </div>
+        <div class="stat-card">
+            <strong>Tempo Total Revisado (Acumulado)</strong>
+            <span id="statTotalTime" style="color: #2ecc71;">00:00.000</span>
+        </div>
+    </div>
+    
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('cadastro')">1. Registrar Nova Tarefa</button>
         <button class="tab-btn" onclick="switchTab('relatorios')">2. Relatórios por Anotador</button>
-        <button class="tab-btn" onclick="switchTab('historico')">3. Histórico Geral (${getTaskCount()})</button>
+        <button class="tab-btn" onclick="switchTab('historico')">3. Histórico Geral</button>
     </div>
 
-    <!-- ABA 1: CADASTRO -->
     <div id="cadastro" class="tab-content active">
         <h3>Registrar Avaliação Individual</h3>
         <div class="grid-2">
@@ -180,12 +216,18 @@
                     <input type="text" id="taskId" placeholder="Ex: TSK-88312">
                 </div>
                 <div class="form-group">
-                    <label>Total de Segmentos Analisados nesta Task</label>
-                    <input type="number" id="totalItems" value="10" min="1">
+                    <label>* Duração total da Task (total duration)</label>
+                    <input type="text" id="taskDuration" placeholder="Ex: 0:23.562 ou 23.562" required>
                 </div>
-                <div class="form-group">
-                    <label>Quantidade de Segmentos com Erro nesta Task</label>
-                    <input type="number" id="errorItems" value="0" min="0">
+                <div class="grid-2" style="gap: 10px;">
+                    <div class="form-group">
+                        <label>Segmentos Totais</label>
+                        <input type="number" id="totalItems" value="10" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Segmentos com Erro</label>
+                        <input type="number" id="errorItems" value="0" min="0">
+                    </div>
                 </div>
             </div>
         </div>
@@ -227,7 +269,6 @@
         <button class="btn btn-success" onclick="saveTask()">Salvar Tarefa no Banco de Dados</button>
     </div>
 
-    <!-- ABA 2: RELATÓRIOS -->
     <div id="relatorios" class="tab-content">
         <h3>Gerar Relatório Consolidado por Anotador</h3>
         <div class="form-group">
@@ -260,7 +301,6 @@
         </div>
     </div>
 
-    <!-- ABA 3: HISTÓRICO -->
     <div id="historico" class="tab-content">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h3>Histórico de Segmentos Auditados</h3>
@@ -272,6 +312,7 @@
                     <th>Data QA</th>
                     <th>Anotador</th>
                     <th>Task ID</th>
+                    <th>Duração</th>
                     <th>Segmentos</th>
                     <th>Erros</th>
                     <th>Precisão</th>
@@ -286,12 +327,65 @@
 <script>
     document.getElementById('qaDate').valueAsDate = new Date();
 
-    // Motor de busca e classificação cruzada baseado em "PT-BR Special Notes" e "CC_Multi Freetalk General Guidelines"
+    // Funções Auxiliares de Conversão e Somatório de Tempo (MM:SS.mmm)
+    function parseTimeToSeconds(timeStr) {
+        if (!timeStr) return 0;
+        const parts = timeStr.trim().split(':');
+        
+        if (parts.length === 1) {
+            // Caso insira apenas os segundos com decimais (ex: 23.562)
+            return parseFloat(parts[0]) || 0;
+        } else if (parts.length === 2) {
+            // Caso padrão (ex: 0:23.562 ou 14:05.200 -> MM:SS.mmm)
+            const mins = parseFloat(parts[0]) || 0;
+            const secs = parseFloat(parts[1]) || 0;
+            return (mins * 60) + secs;
+        } else if (parts.length === 3) {
+            // Caso extremo com horas (ex: HH:MM:SS.mmm)
+            const hrs = parseFloat(parts[0]) || 0;
+            const mins = parseFloat(parts[1]) || 0;
+            const secs = parseFloat(parts[2]) || 0;
+            return (hrs * 3600) + (mins * 60) + secs;
+        }
+        return 0;
+    }
+
+    function formatSecondsToTime(totalSeconds) {
+        if (isNaN(totalSeconds) || totalSeconds <= 0) return "00:00.000";
+        
+        const hrs = Math.floor(totalSeconds / 3600);
+        const mins = Math.floor((totalSeconds % 3600) / 60);
+        const secs = Math.floor(totalSeconds % 60);
+        
+        // Captura os milissegundos isolando a parte decimal com precisão de 3 dígitos
+        const ms = Math.round((totalSeconds % 1) * 1000);
+        
+        const hrsStr = hrs > 0 ? String(hrs).padStart(2, '0') + ':' : '';
+        const minsStr = String(mins).padStart(2, '0');
+        const secsStr = String(secs).padStart(2, '0');
+        const msStr = String(ms).padStart(3, '0');
+        
+        return `${hrsStr}${minsStr}:${secsStr}.${msStr}`;
+    }
+
+    function updateGlobalStats() {
+        let db = localStorage.getItem('qa_tasks_master_db') ? JSON.parse(localStorage.getItem('qa_tasks_master_db')) : [];
+        document.getElementById('statTotalTasks').innerText = db.length;
+        
+        let cumulativeSeconds = 0;
+        db.forEach(task => {
+            cumulativeSeconds += parseTimeToSeconds(task.duration || "0");
+        });
+        
+        document.getElementById('statTotalTime').innerText = formatSecondsToTime(cumulativeSeconds);
+        document.querySelectorAll('.tabs button')[2].innerText = `3. Histórico Geral (${db.length})`;
+    }
+
+    // Motor de busca baseado em "PT-BR Special Notes" e "CC_Multi Freetalk General Guidelines"
     function classifyErrorText(text) {
         if (!text || text.trim() === "") return null;
         
         const cleanText = text.toLowerCase();
-        
         const rules = [
             {
                 category: "Qualidade do Áudio e Regras de Descarte (Discard)",
@@ -365,30 +459,22 @@
 
         if(tabId === 'relatorios') populateLabellerDropdown();
         if(tabId === 'historico') renderHistoryTable();
-        updateTabLabels();
+        updateGlobalStats();
     }
 
-    function updateTabLabels() {
-        document.querySelectorAll('.tabs button')[2].innerText = `3. Histórico Geral (${getTaskCount()})`;
-    }
-
-    function getTaskCount() {
-        const data = localStorage.getItem('qa_tasks_master_db');
-        return data ? JSON.parse(data).length : 0;
-    }
-
-    // Salvar no Banco Local
+    // Salvar no Banco Local com Suporte a Tempo
     function saveTask() {
         const labeller = document.getElementById('labeller').value.trim();
         const taskId = document.getElementById('taskId').value.trim();
+        const duration = document.getElementById('taskDuration').value.trim();
         const totalItems = parseInt(document.getElementById('totalItems').value);
         const errorItems = parseInt(document.getElementById('errorItems').value);
         const qaDate = document.getElementById('qaDate').value;
         const qaName = document.getElementById('qaName').value;
         const customText = document.getElementById('customErrorText').value;
 
-        if (!labeller || !taskId || isNaN(totalItems) || isNaN(errorItems)) {
-            alert("Por favor, preencha todos os campos obrigatórios (*).");
+        if (!labeller || !taskId || !duration || isNaN(totalItems) || isNaN(errorItems)) {
+            alert("Por favor, preencha todos os campos obrigatórios (*), incluindo a duração.");
             return;
         }
         if (errorItems > totalItems) {
@@ -398,7 +484,6 @@
 
         let errorsCommitted = [];
 
-        // 1. Coleta do Checklist Fixo
         document.querySelectorAll('.error-check:checked').forEach(cb => {
             let context = "Verificar seção correspondente nas diretrizes.";
             if (cb.value.includes("Pontuação")) context = "Regra do Fluxo vs Finalidade baseada em pausas e conexões lógicas.";
@@ -410,27 +495,28 @@
             errorsCommitted.push({ category: cb.value, details: "Identificado no checklist padrão.", context: context });
         });
 
-        // 2. Coleta e Classificação Inteligente do campo "Outro"
         const classified = classifyErrorText(customText);
         if (classified) {
             errorsCommitted.push(classified);
-            alert(`Guideline Mapeada com Sucesso!\nSua descrição foi associada a:\n"${classified.category}"`);
         }
 
-        const newTask = { qaName, qaDate, labeller, taskId, totalItems, errorItems, errorsCommitted };
+        // Armazena a string de duração tratada
+        const newTask = { qaName, qaDate, labeller, taskId, duration, totalItems, errorItems, errorsCommitted };
 
         let db = localStorage.getItem('qa_tasks_master_db') ? JSON.parse(localStorage.getItem('qa_tasks_master_db')) : [];
         db.push(newTask);
         localStorage.setItem('qa_tasks_master_db', JSON.stringify(db));
 
-        alert(`Task ${taskId} de ${labeller} processada!`);
+        alert(`Task ${taskId} processada e salva com sucesso!`);
         
         // Reset de campos
         document.getElementById('taskId').value = '';
+        document.getElementById('taskDuration').value = '';
         document.getElementById('errorItems').value = '0';
         document.getElementById('customErrorText').value = '';
         document.querySelectorAll('.error-check').forEach(cb => cb.checked = false);
-        updateTabLabels();
+        
+        updateGlobalStats();
     }
 
     function populateLabellerDropdown() {
@@ -448,7 +534,7 @@
         });
     }
 
-    // Geração do Relatório Agregado Avançado
+    // Geração do Relatório Agregado com Somatório de Tempo por Produtor
     function generateReport() {
         const targetLabeller = document.getElementById('selectLabeller').value;
         if (!targetLabeller) {
@@ -461,12 +547,15 @@
 
         let totalSegments = 0;
         let totalErrors = 0;
+        let totalLabellerSeconds = 0;
         let summaryCategories = {};
         let specificObservations = [];
 
         filtered.forEach(task => {
             totalSegments += task.totalItems;
             totalErrors += task.errorItems;
+            totalLabellerSeconds += parseTimeToSeconds(task.duration);
+            
             task.errorsCommitted.forEach(err => {
                 if (!summaryCategories[err.category]) {
                     summaryCategories[err.category] = { count: 0, context: err.context };
@@ -480,6 +569,7 @@
         });
 
         const accuracy = totalSegments > 0 ? ((totalSegments - totalErrors) / totalSegments) * 100 : 0;
+        const formattedLabellerTime = formatSecondsToTime(totalLabellerSeconds);
         
         let scoreCategory = "";
         let color = "";
@@ -490,18 +580,24 @@
         else { scoreCategory = "< 60%"; color = "#e74c3c"; }
 
         const accBox = document.getElementById('accuracyBox');
-        accBox.innerText = `Acurácia Global Acumulada: ${accuracy.toFixed(2)}%`;
+        accBox.innerText = `Acurácia Global: ${accuracy.toFixed(2)}%`;
         accBox.style.color = 'white';
         accBox.style.backgroundColor = color;
 
         document.getElementById('scoreCategoryField').value = scoreCategory;
-        document.getElementById('metricsSummaryText').innerText = `Volume Controlado: ${filtered.length} Tasks | Total de Segmentos: ${totalSegments} | Segmentos com Desvio: ${totalErrors}`;
+        
+        // Exibe o tempo consolidado do produtor no sumário
+        document.getElementById('metricsSummaryText').innerHTML = 
+            `Volume: <strong>${filtered.length} Tasks</strong> | ` +
+            `Tempo Total de Áudio: <span style="color:#1890ff; font-weight:bold;">${formattedLabellerTime}</span> | ` +
+            `Segmentos Auditados: ${totalSegments} | Desvios: ${totalErrors}`;
 
-        // Construção do e-mail/comentário final unificado
+        // Construção do e-mail de feedback incorporando o tempo
         let comments = `Prezado(a) ${targetLabeller},\n\n`;
-        comments += `Abaixo apresentamos a consolidação de desempenho obtida através da auditoria de QA efetuada nas suas últimas ${filtered.length} tarefas de transcrição.\n\n`;
+        comments += `Abaixo apresentamos a consolidação de desempenho obtida através da auditoria de QA efetuada nas suas tarefas.\n\n`;
         comments += `• Métrica de Performance Acumulada: ${accuracy.toFixed(2)}%\n`;
-        comments += `• Categoria de Entrega (QA Score): ${scoreCategory}\n\n`;
+        comments += `• Categoria de Entrega (QA Score): ${scoreCategory}\n`;
+        comments += `• Tempo Total de Áudio Processado e Revisado: ${formattedLabellerTime}\n\n`;
 
         if (totalErrors === 0) {
             comments += `Excelente constância de entrega! Sua performance atingiu aderência total com os manuais de Processamento de Dados (CC_Multi Freetalk) e Notas Especiais. Continue com esse rigor técnico.`;
@@ -528,13 +624,14 @@
         document.getElementById('reportResult').style.display = 'block';
     }
 
+    // Renderização da tabela do histórico com a nova coluna de tempo
     function renderHistoryTable() {
         const tbody = document.querySelector('#historyTable tbody');
         tbody.innerHTML = '';
         
         let db = localStorage.getItem('qa_tasks_master_db') ? JSON.parse(localStorage.getItem('qa_tasks_master_db')) : [];
         if(db.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhuma tarefa gravada no histórico até o momento.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Nenhuma tarefa gravada no histórico até o momento.</td></tr>';
             return;
         }
 
@@ -546,10 +643,14 @@
                 return e.details && !e.details.includes("checklist manual") ? `<strong>${e.category}</strong>: <em>"${e.details}"</em>` : `<strong>${e.category}</strong>`;
             }).join('<br> ');
 
+            // Garante que se o formato inserido for puro (ex: segundos decimais), ele fique legível
+            let visualDuration = task.duration.includes(':') ? task.duration : formatSecondsToTime(parseFloat(task.duration));
+
             tr.innerHTML = `
                 <td>${task.qaDate}</td>
                 <td><strong>${task.labeller}</strong></td>
                 <td><span class="badge">${task.taskId}</span></td>
+                <td style="font-family: monospace; font-weight: bold; color: #555;">${visualDuration}</td>
                 <td>${task.totalItems}</td>
                 <td>${task.errorItems}</td>
                 <td style="font-weight:bold; color: ${accuracy >= 90 ? 'green' : 'orange'}">${accuracy.toFixed(1)}%</td>
@@ -563,11 +664,14 @@
         if(confirm("Deseja expurgar todo o histórico de auditoria local? Dados não salvos externamente serão perdidos permanentemente.")) {
             localStorage.removeItem('qa_tasks_master_db');
             renderHistoryTable();
-            updateTabLabels();
+            updateGlobalStats();
             document.getElementById('reportResult').style.display = 'none';
             alert("Banco de dados resetado com sucesso.");
         }
     }
+
+    // Executa na inicialização da página para buscar os dados já salvos
+    updateGlobalStats();
 </script>
 
 </body>
